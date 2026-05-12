@@ -6,6 +6,7 @@ class ConvertRequest(BaseModel):
 
 
 class ParsedStep(BaseModel):
+    step_name: str
     operation: str
     source_pattern: str
     tableau_equivalent: str
@@ -18,3 +19,10 @@ class ConvertResponse(BaseModel):
     flow_diagram: str
     migration_notes: list[str]
     parsed_steps: list[ParsedStep]
+
+
+class LLMRefinementPayload(BaseModel):
+    summary: str
+    tableau_steps: list[str]
+    flow_diagram: str
+    migration_notes: list[str]

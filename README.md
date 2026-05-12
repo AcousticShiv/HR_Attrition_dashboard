@@ -1,6 +1,6 @@
 # Power Query M → Tableau Prep Migration Assistant
 
-A production-oriented starter app that converts Power Query **M code** into beginner-friendly Tableau Prep migration guidance.
+A production-oriented app that converts Power Query **M code** into beginner-friendly Tableau Prep migration guidance.
 
 ## What this app returns
 1. Plain-English transformation explanation
@@ -8,11 +8,13 @@ A production-oriented starter app that converts Power Query **M code** into begi
 3. Text flow representation
 4. Migration notes / limitations
 
-## Tech stack
-- **Backend**: FastAPI (Python)
+## Architecture (Increment 2)
+- **Backend**: FastAPI
 - **Frontend**: Streamlit
-- **LLM**: OpenAI API (optional enhancement layer)
-- **Validation**: Pydantic
+- **Core Conversion Engine**:
+  - Deterministic parser that extracts `let` step assignments in order
+  - Operation mapping from M operations to Tableau Prep equivalents
+  - Optional LLM refinement layer with strict schema validation
 
 ## Quick start
 
@@ -27,7 +29,7 @@ pip install -r requirements.txt
 ```bash
 cp .env.example .env
 ```
-Set `OPENAI_API_KEY` if you want LLM-enhanced output.
+Set `OPENAI_API_KEY` to enable LLM refinement.
 
 ### 3) Run backend
 ```bash
@@ -42,6 +44,11 @@ streamlit run frontend/streamlit_app.py
 ## API endpoint
 - `POST /api/v1/convert`
 
-## Notes
-- The app includes a deterministic parser/mapping layer first.
-- If LLM is enabled, it refines wording while preserving transformation order and parser-detected steps.
+## Security & reliability notes
+- API keys are loaded via environment variables.
+- LLM output is validated against a strict schema before being returned.
+- If LLM output is invalid JSON or schema-invalid, deterministic output is returned.
+
+## Current limitations
+- Multiline M expressions are only partially supported in this increment.
+- Complex custom functions and deeply nested expressions may require manual migration.

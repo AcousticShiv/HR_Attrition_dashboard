@@ -7,32 +7,36 @@ from app.core.config import settings
 def _build_flow(steps: list[ParsedStep]) -> str:
     if not steps:
         return "Input -> (No recognizable transformation steps found) -> Output"
-    nodes = ["Input"] + [s.operation for s in steps] + ["Output"]
+    nodes = ["Input"] + [f"{s.step_name}: {s.operation}" for s in steps] + ["Output"]
     return " -> ".join(nodes)
 
 
 def _default_notes(steps: list[ParsedStep]) -> list[str]:
     notes = [
-        "Validate join keys and null behavior manually in Tableau Prep.",
-        "Custom M functions may require manual recreation in calculated fields.",
-        "Confirm data type coercion results after import.",
+        "Validate joins manually (key cardinality, null matching, and join type behavior).",
+        "Custom functions or row-context logic may require manual calculated fields.",
+        "Recheck type conversion side effects (nulls, locale formatting, and parsing).",
     ]
     if not steps:
-        notes.append("No known M operations were detected. Check for custom or nested expressions.")
+        notes.append("No known M operations were detected. Check for custom, multiline, or nested expressions.")
     return notes
 
 
 def convert_m_to_tableau(m_code: str) -> ConvertResponse:
     parsed = parse_m_code(m_code)
-    tableau_steps = [f"{i+1}. {s.operation}: {s.tableau_equivalent}" for i, s in enumerate(parsed)]
+
+    tableau_steps = [
+        f"{i+1}. {s.step_name}: {s.operation} → {s.tableau_equivalent}"
+        for i, s in enumerate(parsed)
+    ]
+
     summary = (
-        "This query performs structured transformations in sequence. "
-        "Use the mapped Tableau Prep steps below to recreate the same pipeline."
+        f"Detected {len(parsed)} transformation step(s). Rebuild them in order in Tableau Prep."
         if parsed
         else "No standard M transformations were recognized. Manual analysis is required."
     )
 
-    response = ConvertResponse(
+    draft = ConvertResponse(
         summary=summary,
         tableau_steps=tableau_steps,
         flow_diagram=_build_flow(parsed),
@@ -41,5 +45,5 @@ def convert_m_to_tableau(m_code: str) -> ConvertResponse:
     )
 
     if settings.use_llm and settings.openai_api_key:
-        return refine_with_llm(m_code, response)
-    return response
+        return refine_with_llm(m_code, draft)
+    return draft
